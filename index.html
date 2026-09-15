@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Analisis Butir Soal (Pilihan Ganda & Uraian)</title>
+    <title>AnalisisSoalPro</title>
+    <link rel="icon" href="https://pngup.com/K1Vd/ndik ya.png" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Include html2pdf library for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        
-        /* Custom print and PDF styling adjustments for A4 */
         @media print {
             .no-print { display: none !important; }
             body { background: white !important; }
@@ -105,11 +103,12 @@
                     <h2 id="repSchool" class="text-xl font-extrabold uppercase tracking-wider text-slate-900">SMP ISLAM TERPADU TRI SUKSES</h2>
                     <h3 id="repSummative" class="text-base font-bold text-indigo-700">ANALISIS BUTIR SOAL SUMATIF AKHIR SEMESTER</h3>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div><span class="font-semibold text-slate-500 block">Mata Pelajaran:</span> <span id="repSubject" class="font-bold text-slate-800">Matematika</span></div>
                     <div><span class="font-semibold text-slate-500 block">Kelas / Semester:</span> <span id="repClassSem" class="font-bold text-slate-800">VII (Tujuh) / Ganjil / Genap</span></div>
                     <div><span class="font-semibold text-slate-500 block">Guru Pengampu:</span> <span id="repTeacher" class="font-bold text-slate-800">Ash Siddiq ST</span></div>
                     <div><span class="font-semibold text-slate-500 block">Tanggal Ujian:</span> <span id="repDate" class="font-bold text-slate-800">5 Desember 2026</span></div>
+                    <div><span class="font-semibold text-slate-500 block">KKM:</span> <span id="repKKM" class="font-bold text-slate-800">75</span></div>
                 </div>
             </div>
 
@@ -126,6 +125,9 @@
                 <button onclick="switchTab('recap')" id="tab-recap" class="px-6 py-3.5 font-semibold text-sm text-slate-500 hover:text-indigo-600 border-b-2 border-transparent flex items-center gap-2 whitespace-nowrap transition">
                     <i class="fa-solid fa-medal"></i> Rekap Nilai Siswa
                 </button>
+                <button onclick="switchTab('conversion')" id="tab-conversion" class="px-6 py-3.5 font-semibold text-sm text-slate-500 hover:text-indigo-600 border-b-2 border-transparent flex items-center gap-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-percent"></i> Konversi Nilai
+                </button>
             </div>
 
             <div id="content-input" class="space-y-6">
@@ -136,8 +138,8 @@
                     </h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
-                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Nama Sekolah (Terkunci)</label>
-                            <input type="text" id="inputSchool" value="SMP ISLAM TERPADU TRI SUKSES" readonly class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-100 text-slate-600 font-bold cursor-not-allowed">
+                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Nama Sekolah</label>
+                            <input type="text" id="inputSchool" value="SMP ISLAM TERPADU TRI SUKSES" oninput="updateMeta()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800">
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-500 mb-1">Nama Guru</label>
@@ -162,6 +164,10 @@
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-500 mb-1">Tanggal Ujian</label>
                             <input type="text" id="inputDate" value="5 Desember 2026" oninput="updateMeta()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Nilai KKM</label>
+                            <input type="number" id="inputKKM" value="75" min="0" max="100" oninput="updateMeta()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-indigo-700">
                         </div>
                     </div>
                 </div>
@@ -233,7 +239,7 @@
 
                 <div id="analysisPdfContainer" class="bg-white p-4 rounded-xl border border-slate-100">
                     <div class="hidden print-header mb-6 text-center border-b-2 border-slate-200 pb-4">
-                        <h2 class="text-lg font-extrabold uppercase text-slate-900">SMP ISLAM TERPADU TRI SUKSES</h2>
+                        <h2 id="pdfAnSchool" class="text-lg font-extrabold uppercase text-slate-900">SMP ISLAM TERPADU TRI SUKSES</h2>
                         <h3 class="text-sm font-bold text-indigo-700 mt-1">LAPORAN ANALISIS BUTIR SOAL</h3>
                         <div class="flex justify-center gap-6 mt-2 text-xs text-slate-600 font-medium">
                             <span>Mata Pelajaran: <strong id="pdfAnSub"></strong></span>
@@ -242,7 +248,7 @@
                         </div>
                     </div>
                     <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                        <table class="w-full text-left border-collapse text-xs">
+                        <table class="w-full text-center border-collapse text-xs">
                             <thead class="bg-slate-100 text-slate-600 uppercase font-semibold">
                                 <tr>
                                     <th class="p-3 border-b">No / Tipe</th>
@@ -288,19 +294,19 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-base font-bold text-slate-700">Rekapitulasi Skor & Nilai Akhir Siswa</h3>
-                        <p class="text-xs text-slate-500">Nilai total gabungan dari Pilihan Ganda dan Uraian (dibulatkan ke bilangan bulat).</p>
+                        <p id="recapSubtitle" class="text-xs text-slate-500">Nilai total gabungan dari Pilihan Ganda dan Uraian (dibulatkan ke bilangan bulat).</p>
                     </div>
                 </div>
 
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-left border-collapse text-xs">
+                    <table class="w-full text-center border-collapse text-xs">
                         <thead class="bg-slate-100 text-slate-600 uppercase font-semibold">
                             <tr>
                                 <th class="p-3 border-b">Peringkat</th>
                                 <th class="p-3 border-b">Nama / ID Siswa</th>
                                 <th class="p-3 border-b">Total Perolehan Skor</th>
                                 <th class="p-3 border-b">Nilai Akhir (Bulat)</th>
-                                <th class="p-3 border-b">Status Kelulusan (KKM 70)</th>
+                                <th id="recapThKKM" class="p-3 border-b">Status Kelulusan (KKM 75)</th>
                             </tr>
                         </thead>
                         <tbody id="recapTableBody" class="divide-y divide-slate-100">
@@ -309,11 +315,48 @@
                     </table>
                 </div>
             </div>
+
+            <div id="content-conversion" class="space-y-6 hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-700">Konversi Nilai Akhir Siswa</h3>
+                        <p id="convSubtitle" class="text-xs text-slate-500">Atur rentang nilai minimum dan maksimum untuk melakukan konversi skor mentah siswa berdasarkan seluruh nilai asli yang ada.</p>
+                    </div>
+                    <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 no-print">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Nilai Minimum</label>
+                            <input type="number" id="convMin" value="75" onchange="runAnalysis()" class="w-20 px-2 py-1 border border-slate-300 rounded text-xs font-bold text-slate-800 bg-white focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Nilai Maksimum</label>
+                            <input type="number" id="convMax" value="90" onchange="runAnalysis()" class="w-20 px-2 py-1 border border-slate-300 rounded text-xs font-bold text-slate-800 bg-white focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-center border-collapse text-xs">
+                        <thead class="bg-slate-100 text-slate-600 uppercase font-semibold">
+                            <tr>
+                                <th class="p-3 border-b">Peringkat</th>
+                                <th class="p-3 border-b">Nama / ID Siswa</th>
+                                <th class="p-3 border-b">Skor Mentah / Maksimum</th>
+                                <th class="p-3 border-b">Nilai Asli</th>
+                                <th class="p-3 border-b">Nilai Konversi (Skala Baru)</th>
+                                <th id="convThKKM" class="p-3 border-b">Status Kelulusan (KKM 75)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="conversionTableBody" class="divide-y divide-slate-100">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
 
     </main>
 
-    <!-- Modal for Excel Import Guide & Upload -->
     <div id="excelGuideModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-xl border border-slate-100">
             <div class="flex justify-between items-center">
@@ -345,7 +388,6 @@
         </div>
     </div>
 
-    <!-- Modal for Student Text Import -->
     <div id="importStudentModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-100">
             <div class="flex justify-between items-center">
@@ -378,11 +420,12 @@
             summative: "SUMATIF AKHIR SEMESTER (SAS)",
             semester: "Ganjil / Genap",
             examDate: "5 Desember 2026",
+            kkm: 75,
             numStudents: 10,
             numQuestions: 10,
             students: [],
-            questions: [], // { type: 'PG'|'URAIAN', key: 'A', weight: 1 }
-            answers: [] // 2D array [studentIndex][questionIndex]
+            questions: [],
+            answers: []
         };
 
         let diffChartInstance = null;
@@ -637,12 +680,14 @@
         }
 
         function updateMeta() {
+            state.school = document.getElementById('inputSchool').value;
             state.teacher = document.getElementById('inputTeacher').value;
             state.classRoom = document.getElementById('inputClass').value;
             state.subject = document.getElementById('inputSubject').value;
             state.summative = document.getElementById('inputSummative').value;
             state.semester = document.getElementById('inputSemester').value;
             state.examDate = document.getElementById('inputDate').value;
+            state.kkm = parseFloat(document.getElementById('inputKKM').value) || 75;
 
             document.getElementById('repSchool').innerText = state.school;
             document.getElementById('repSummative').innerText = `ANALISIS BUTIR SOAL ${state.summative}`;
@@ -650,10 +695,25 @@
             document.getElementById('repClassSem').innerText = `${state.classRoom} / ${state.semester}`;
             document.getElementById('repTeacher').innerText = state.teacher;
             document.getElementById('repDate').innerText = state.examDate;
+            document.getElementById('repKKM').innerText = state.kkm;
 
+            document.getElementById('pdfAnSchool').innerText = state.school;
             document.getElementById('pdfAnSub').innerText = state.subject;
             document.getElementById('pdfAnClass').innerText = state.classRoom;
             document.getElementById('pdfAnTeacher').innerText = state.teacher;
+
+            if (document.getElementById('recapSubtitle')) {
+                document.getElementById('recapSubtitle').innerText = `Nilai total gabungan dari Pilihan Ganda dan Uraian (dibulatkan ke bilangan bulat, KKM: ${state.kkm}).`;
+            }
+            if (document.getElementById('recapThKKM')) {
+                document.getElementById('recapThKKM').innerText = `Status Kelulusan (KKM ${state.kkm})`;
+            }
+            if (document.getElementById('convSubtitle')) {
+                document.getElementById('convSubtitle').innerText = `Atur rentang nilai minimum dan maksimum untuk melakukan konversi skor mentah siswa berdasarkan seluruh nilai asli yang ada (KKM: ${state.kkm}).`;
+            }
+            if (document.getElementById('convThKKM')) {
+                document.getElementById('convThKKM').innerText = `Status Kelulusan (KKM ${state.kkm})`;
+            }
         }
 
         function runAnalysis() {
@@ -802,6 +862,7 @@
             renderAnalysisTable(analysisResults);
             renderCharts(analysisResults);
             renderRecapTable(studentScores, maxTotalScore);
+            renderConversionTable(studentScores, maxTotalScore);
         }
 
         function calculatePearson(x, y) {
@@ -825,7 +886,7 @@
             results.forEach(res => {
                 html += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3 border-b font-semibold text-slate-700">Soal ${res.no} <span class="text-[10px] text-indigo-600">(${res.type})</span></td>
+                        <td class="text-left p-3 border-b font-semibold text-slate-700">Soal ${res.no} <span class="text-[10px] text-indigo-600">(${res.type})</span></td>
                         <td class="p-3 border-b font-medium">${res.weight}</td>
                         <td class="p-3 border-b font-mono font-medium">${res.P.toFixed(2)}</td>
                         <td class="p-3 border-b"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border ${res.diffBadge}">${res.diffClass}</span></td>
@@ -889,20 +950,26 @@
         }
 
         function renderRecapTable(studentScores, maxTotalScore) {
-            let sorted = [...studentScores].sort((a, b) => b.total - a.total);
+            let sortedForRank = [...studentScores].sort((a, b) => b.total - a.total);
+            let rankMap = {};
+            sortedForRank.forEach((s, idx) => {
+                rankMap[s.index] = idx + 1;
+            });
+
             let tbody = document.getElementById('recapTableBody');
             let html = '';
 
-            sorted.forEach((s, rank) => {
+            studentScores.forEach((s) => {
+                let rank = rankMap[s.index];
                 let finalScore = maxTotalScore > 0 ? Math.round((s.total / maxTotalScore) * 100) : 0;
-                let isPassed = finalScore >= 70;
+                let isPassed = finalScore >= state.kkm;
                 let badgeClass = isPassed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200';
-                let statusText = isPassed ? 'Tuntas / Lulus' : 'Belum Tuntas';
+                let statusText = isPassed ? 'Tuntas' : 'Belum Tuntas';
 
                 html += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3 border-b font-bold text-slate-700">#${rank + 1}</td>
-                        <td class="p-3 border-b font-semibold text-slate-800">${s.name}</td>
+                        <td class="p-3 border-b font-bold text-slate-700">#${rank}</td>
+                        <td class="text-left p-3 border-b font-semibold text-slate-800">${s.name}</td>
                         <td class="p-3 border-b font-mono font-medium">${s.total} / ${maxTotalScore}</td>
                         <td class="p-3 border-b font-mono font-bold text-indigo-600">${finalScore}</td>
                         <td class="p-3 border-b"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border ${badgeClass}">${statusText}</span></td>
@@ -912,8 +979,55 @@
             tbody.innerHTML = html;
         }
 
+        function renderConversionTable(studentScores, maxTotalScore) {
+            let sortedForRank = [...studentScores].sort((a, b) => b.total - a.total);
+            let rankMap = {};
+            sortedForRank.forEach((s, idx) => {
+                rankMap[s.index] = idx + 1;
+            });
+
+            let tbody = document.getElementById('conversionTableBody');
+            let html = '';
+
+            let minScale = parseFloat(document.getElementById('convMin').value) || 75;
+            let maxScale = parseFloat(document.getElementById('convMax').value) || 90;
+
+            let rawScores = studentScores.map(s => s.total);
+            let minRaw = Math.min(...rawScores);
+            let maxRaw = Math.max(...rawScores);
+
+            studentScores.forEach((s) => {
+                let rank = rankMap[s.index];
+                let rawScore100 = maxTotalScore > 0 ? Math.round((s.total / maxTotalScore) * 100) : 0;
+                let convertedScore = 0;
+
+                if (maxRaw === minRaw) {
+                    convertedScore = Math.round(maxScale);
+                } else {
+                    let scaled = minScale + ((s.total - minRaw) / (maxRaw - minRaw)) * (maxScale - minScale);
+                    convertedScore = Math.round(scaled);
+                }
+                
+                let isPassed = convertedScore >= state.kkm;
+                let badgeClass = isPassed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200';
+                let statusText = isPassed ? 'Tuntas' : 'Belum Tuntas';
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 border-b font-bold text-slate-700">#${rank}</td>
+                        <td class="text-left p-3 border-b font-semibold text-slate-800">${s.name}</td>
+                        <td class="p-3 border-b font-mono font-medium">${s.total} / ${maxTotalScore}</td>
+                        <td class="p-3 border-b font-mono font-medium text-slate-700">${rawScore100}</td>
+                        <td class="p-3 border-b font-mono font-bold text-indigo-600">${convertedScore}</td>
+                        <td class="p-3 border-b"><span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border ${badgeClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
         function switchTab(tabId) {
-            ['input', 'analysis', 'charts', 'recap'].forEach(id => {
+            ['input', 'analysis', 'charts', 'recap', 'conversion'].forEach(id => {
                 document.getElementById(`content-${id}`).classList.add('hidden');
                 document.getElementById(`tab-${id}`).classList.remove('border-indigo-600', 'text-indigo-600');
                 document.getElementById(`tab-${id}`).classList.add('border-transparent', 'text-slate-500');
