@@ -105,7 +105,7 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div><span class="font-semibold text-slate-500 block">Mata Pelajaran:</span> <span id="repSubject" class="font-bold text-slate-800">Matematika</span></div>
-                    <div><span class="font-semibold text-slate-500 block">Kelas / Semester:</span> <span id="repClassSem" class="font-bold text-slate-800">VII (Tujuh) / Ganjil / Genap</span></div>
+                    <div><span class="font-semibold text-slate-500 block">Kelas / Semester:</span> <span id="repClassSem" class="font-bold text-slate-800">VII (Tujuh) / Ganjil</span></div>
                     <div><span class="font-semibold text-slate-500 block">Guru Pengampu:</span> <span id="repTeacher" class="font-bold text-slate-800">Ash Siddiq ST</span></div>
                     <div><span class="font-semibold text-slate-500 block">Tanggal Ujian:</span> <span id="repDate" class="font-bold text-slate-800">5 Desember 2026</span></div>
                     <div><span class="font-semibold text-slate-500 block">KKM:</span> <span id="repKKM" class="font-bold text-slate-800">75</span></div>
@@ -159,7 +159,10 @@
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-500 mb-1">Semester</label>
-                            <input type="text" id="inputSemester" value="Ganjil / Genap" oninput="updateMeta()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
+                            <select id="inputSemester" onchange="updateMeta()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-800">
+                                <option value="Ganjil" selected>Ganjil</option>
+                                <option value="Genap">Genap</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-500 mb-1">Tanggal Ujian</label>
@@ -418,7 +421,7 @@
             classRoom: "VII (Tujuh)",
             subject: "Matematika",
             summative: "SUMATIF AKHIR SEMESTER (SAS)",
-            semester: "Ganjil / Genap",
+            semester: "Ganjil",
             examDate: "5 Desember 2026",
             kkm: 75,
             numStudents: 10,
@@ -906,6 +909,34 @@
 
             let ctxDiff = document.getElementById('difficultyChart').getContext('2d');
             if (diffChartInstance) diffChartInstance.destroy();
+            
+            // Register a custom plugin to draw text labels directly on the doughnut chart slices
+            Chart.register({
+                id: 'doughnutLabels',
+                afterDraw(chart) {
+                    if (chart.config.type !== 'doughnut') return;
+                    let { ctx, width, height } = chart;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        let meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((element, index) => {
+                            let dataValue = dataset.data[index];
+                            if (dataValue > 0) {
+                                let { x, y } = element.tooltipPosition();
+                                ctx.save();
+                                ctx.font = 'bold 12px Inter, sans-serif';
+                                ctx.fillStyle = '#ffffff';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                                ctx.shadowBlur = 4;
+                                ctx.fillText(`${dataValue} Soal`, x, y);
+                                ctx.restore();
+                            }
+                        });
+                    });
+                }
+            });
+
             diffChartInstance = new Chart(ctxDiff, {
                 type: 'doughnut',
                 data: {
@@ -920,7 +951,20 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 } } } }
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.raw || 0;
+                                    let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return ` ${label}: ${value} Soal (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
@@ -1187,6 +1231,7 @@
                 ["LAPORAN ANALISIS BUTIR SOAL"],
                 ["Mata Pelajaran", state.subject],
                 ["Kelas", state.classRoom],
+                ["Semester", state.semester],
                 ["Guru Pengampu", state.teacher],
                 ["Tanggal", state.examDate],
                 []
