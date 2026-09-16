@@ -1241,31 +1241,59 @@
             for (let j = 0; j < state.numQuestions; j++) {
                 header.push(`Soal ${j+1} (${state.questions[j].type})`);
             }
-            header.push("Total Skor");
+            header.push("Total Skor", "Nilai Asli", "Nilai Konversi");
             wsData.push(header);
 
+            let maxTotalScore = 0;
+            state.questions.forEach(q => {
+                maxTotalScore += (q.weight || 1);
+            });
+
+            let studentScores = [];
             state.students.forEach((s, i) => {
-                let row = [i + 1, s];
-                let rowTotal = 0;
+                let total = 0;
                 for (let j = 0; j < state.numQuestions; j++) {
                     let ans = state.answers[i][j];
-                    row.push(ans);
                     let q = state.questions[j];
                     let w = q.weight || 1;
                     if (q.type === 'PG') {
-                        if (ans === q.key) rowTotal += w;
+                        if (ans === q.key) total += w;
                     } else {
-                        rowTotal += (parseFloat(ans) || 0);
+                        total += (parseFloat(ans) || 0);
                     }
                 }
-                row.push(rowTotal);
+                studentScores.push(total);
+            });
+
+            let minScale = parseFloat(document.getElementById('convMin').value) || 75;
+            let maxScale = parseFloat(document.getElementById('convMax').value) || 90;
+            let minRaw = Math.min(...studentScores);
+            let maxRaw = Math.max(...studentScores);
+
+            state.students.forEach((s, i) => {
+                let row = [i + 1, s];
+                let rowTotal = studentScores[i];
+                for (let j = 0; j < state.numQuestions; j++) {
+                    row.push(state.answers[i][j]);
+                }
+                
+                let rawScore100 = maxTotalScore > 0 ? Math.round((rowTotal / maxTotalScore) * 100) : 0;
+                let convertedScore = 0;
+                if (maxRaw === minRaw) {
+                    convertedScore = Math.round(maxScale);
+                } else {
+                    let scaled = minScale + ((rowTotal - minRaw) / (maxRaw - minRaw)) * (maxScale - minScale);
+                    convertedScore = Math.round(scaled);
+                }
+
+                row.push(rowTotal, rawScore100, convertedScore);
                 wsData.push(row);
             });
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Rekap Matriks & Nilai");
             XLSX.writeFile(wb, "Hasil_Analisis_Soal.xlsx");
-            showNotification("Data berhasil diekspor ke Excel.");
+            showNotification("Data berhasil diekspor ke Excel beserta Nilai Konversi.");
         }
 
         function exportAnalysisPDF() {
