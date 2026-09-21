@@ -27,25 +27,31 @@
                 <img src="https://pngup.com/K1Vd/ndik.png" alt="Icon" class="w-20 h-20 object-contain">
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">AnalisisSoal Pro</h1>
-                    <p class="text-xs text-indigo-200">Sistem Analisis Butir Soal (Pilihan Ganda & Uraian Berbasis Bobot)</p>
-                    <p class="text-[11px] text-amber-300 font-medium tracking-wide mt-0.5">By Ash Siddiq ST</p>
+                    <p class="text-xm font-bold text-indigo-200">Sistem Analisis Butir Soal (Pilihan Ganda & Uraian Berbasis Bobot)</p>
+                    <p class="text-xm font-bold text-amber-300">By Ash Siddiq ST</p>
                 </div>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="openImportStudentModal()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-lg transition border border-indigo-500 shadow-sm flex items-center gap-1.5">
-                        <i class="fa-solid fa-users-rectangle"></i> Import Nama Siswa (Teks)
-                    </button>
-                    <button onclick="loadSampleData()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-lg transition border border-indigo-500 shadow-sm flex items-center gap-1.5">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Data Contoh
-                    </button>
-                    <button onclick="openExcelGuideModal()" class="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-xs font-semibold rounded-lg transition shadow-sm flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-excel"></i> Format Excel & Import
-                    </button>
-                    <button onclick="exportToExcel()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-xs font-semibold rounded-lg transition shadow-sm flex items-center gap-1.5">
-                        <i class="fa-solid fa-download"></i> Ekspor Excel
-                    </button>
-                </div>
+            <!-- 3 Top and 3 Bottom Button Grid Layout -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button onclick="openImportStudentModal()" class="px-3 py-2 bg-blue-600 hover:bg-indigo-500 text-xs font-semibold rounded-lg transition border border-indigo-500 shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-users-rectangle"></i> Import Nama Siswa (Teks)
+                </button>
+                <button onclick="loadSampleData()" class="px-3 py-2 bg-yellow-600 hover:bg-indigo-500 text-xs font-semibold rounded-lg transition border border-indigo-500 shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Data Contoh
+                </button>
+                <button onclick="openExcelGuideModal()" class="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-xs font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-file-excel"></i> Format Excel & Import
+                </button>
+                <button onclick="exportToExcel()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-xs font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-download"></i> Ekspor Excel
+                </button>
+                <button onclick="exportJSON()" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-xs font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap" title="Ekspor seluruh konfigurasi dan data ke file JSON">
+                    <i class="fa-solid fa-file-code"></i> Ekspor JSON
+                </button>
+                <label class="px-3 py-2 bg-violet-600 hover:bg-violet-500 text-xs font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="Impor data dari file JSON">
+                    <i class="fa-solid fa-file-import"></i> Impor JSON
+                    <input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="importJSON(event)">
+                </label>
             </div>
         </div>
     </header>
@@ -910,32 +916,33 @@
             let ctxDiff = document.getElementById('difficultyChart').getContext('2d');
             if (diffChartInstance) diffChartInstance.destroy();
             
-            // Register a custom plugin to draw text labels directly on the doughnut chart slices
-            Chart.register({
-                id: 'doughnutLabels',
-                afterDraw(chart) {
-                    if (chart.config.type !== 'doughnut') return;
-                    let { ctx, width, height } = chart;
-                    chart.data.datasets.forEach((dataset, i) => {
-                        let meta = chart.getDatasetMeta(i);
-                        meta.data.forEach((element, index) => {
-                            let dataValue = dataset.data[index];
-                            if (dataValue > 0) {
-                                let { x, y } = element.tooltipPosition();
-                                ctx.save();
-                                ctx.font = 'bold 12px Inter, sans-serif';
-                                ctx.fillStyle = '#ffffff';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                                ctx.shadowBlur = 4;
-                                ctx.fillText(`${dataValue} Soal`, x, y);
-                                ctx.restore();
-                            }
+            if (!Chart.registry.plugins.get('doughnutLabels')) {
+                Chart.register({
+                    id: 'doughnutLabels',
+                    afterDraw(chart) {
+                        if (chart.config.type !== 'doughnut') return;
+                        let { ctx } = chart;
+                        chart.data.datasets.forEach((dataset, i) => {
+                            let meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((element, index) => {
+                                let dataValue = dataset.data[index];
+                                if (dataValue > 0) {
+                                    let { x, y } = element.tooltipPosition();
+                                    ctx.save();
+                                    ctx.font = 'bold 12px Inter, sans-serif';
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                                    ctx.shadowBlur = 4;
+                                    ctx.fillText(`${dataValue} Soal`, x, y);
+                                    ctx.restore();
+                                }
+                            });
                         });
-                    });
-                }
-            });
+                    }
+                });
+            }
 
             diffChartInstance = new Chart(ctxDiff, {
                 type: 'doughnut',
@@ -1313,6 +1320,88 @@
                 if (printHeader) printHeader.classList.add('hidden');
                 showNotification("PDF Analisis Butir Soal berhasil diunduh.");
             });
+        }
+
+        /* --- JSON Export & Import Functions Added Here --- */
+        function exportJSON() {
+            // Update state with any current input field values before exporting
+            updateMeta();
+            state.numStudents = state.students.length;
+            state.numQuestions = state.questions.length;
+
+            let dataStr = "data:text/json;charset=utf-8," + 
+                encodeURIComponent(JSON.stringify(state, null, 2));
+
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+
+            let safeSubject = state.subject 
+                ? state.subject.replace(/[^a-z0-9]/gi, '_').toLowerCase() 
+                : "analisis";
+
+            // Membuat tanggal: DD-MM-YYYY
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+
+            const tanggal = `${day}-${month}-${year}`;
+
+            // Nama file: analisis_soal_matematika_21-09-2026.json
+            downloadAnchor.setAttribute(
+                "download", 
+                `analisis_soal_${safeSubject}_${tanggal}.json`
+            );
+
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showNotification("Data berhasil diekspor ke format JSON.");
+        }
+
+        function importJSON(e) {
+            let file = e.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    let parsedData = JSON.parse(evt.target.result);
+                    
+                    // Validate core structure
+                    if (!parsedData || !Array.isArray(parsedData.students) || !Array.isArray(parsedData.questions) || !Array.isArray(parsedData.answers)) {
+                        showNotification("Format file JSON tidak valid. Struktur data tidak sesuai.");
+                        return;
+                    }
+
+                    // Assign imported data to state
+                    state = parsedData;
+
+                    // Update UI input fields to reflect imported metadata
+                    document.getElementById('inputSchool').value = state.school || "";
+                    document.getElementById('inputTeacher').value = state.teacher || "";
+                    document.getElementById('inputClass').value = state.classRoom || "";
+                    document.getElementById('inputSubject').value = state.subject || "";
+                    document.getElementById('inputSummative').value = state.summative || "";
+                    document.getElementById('inputSemester').value = state.semester || "Ganjil";
+                    document.getElementById('inputDate').value = state.examDate || "";
+                    document.getElementById('inputKKM').value = state.kkm !== undefined ? state.kkm : 75;
+
+                    document.getElementById('numStudents').value = state.students.length;
+                    document.getElementById('numQuestions').value = state.questions.length;
+
+                    renderAll();
+                    showNotification("Data berhasil diimpor dari file JSON!");
+                } catch (err) {
+                    console.error(err);
+                    showNotification("Gagal membaca file JSON. Pastikan file berformat JSON yang valid.");
+                } finally {
+                    // Reset file input so selecting the same file triggers onchange again if needed
+                    e.target.value = "";
+                }
+            };
+            reader.readAsText(file);
         }
 
         function showNotification(msg) {
